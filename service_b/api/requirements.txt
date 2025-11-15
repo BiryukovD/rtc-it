@@ -1,0 +1,6 @@
+fastapi
+pydantic
+uvicorn
+aio-pika
+motor
+pydantic-settings
