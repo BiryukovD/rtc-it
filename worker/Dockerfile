@@ -1,8 +1,8 @@
 FROM python:3.11
 
-RUN mkdir /fastapi_app
+RUN mkdir /rabbitmq_consumer
 
-WORKDIR /fastapi_app
+WORKDIR /rabbitmq_consumer
 
 RUN pip install --upgrade pip 
 
@@ -12,4 +12,7 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8002"]
+CMD ["python3", "rabbitmq_consumer.py"]
+
+
+

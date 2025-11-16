@@ -2,6 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
 import os
+import pprint
 
 DOTENV = os.path.join(os.path.dirname(__file__), ".env")
 
@@ -19,7 +20,7 @@ class MongoDB(ConfigBase):
 class RabbitMQ(ConfigBase):
     model_config = SettingsConfigDict(env_prefix="RABBITMQ_")
     URI: str = Field(default="amqp://guest:guest@localhost:5672/")
-    QUEUE_NAME: str = Field(default="tasks")
+    TASK_QUEUE_NAME: str = Field(default="tasks")
     DURABLE: bool = Field(default=True)
 
 
@@ -31,4 +32,13 @@ class Config(BaseSettings):
     def load(cls) -> "Config":
         return cls()
     
+    def show(self):
+        """Вывод всех переменных окружения конфигурации"""
+        pprint.pprint({
+            "mongo": self.mongo.model_dump(),
+            "rabbit": self.rabbit.model_dump()
+        }, width=120)
+    
 config = Config.load()
+# Вывод всех переменных
+config.show()

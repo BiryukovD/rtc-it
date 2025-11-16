@@ -1,4 +1,6 @@
 from contextlib import asynccontextmanager
+import logging
+import time
 
 from aio_pika import connect_robust
 from fastapi import FastAPI, Request
@@ -10,20 +12,28 @@ from rabbitmq import rabbit
 from router import router as task_router
 from config import config
 
+from logging_setup import setup_logging
+
+setup_logging()
+logger = logging.getLogger(__name__)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    time.sleep(10)
     try:
         mongo.client = AsyncIOMotorClient(config.mongo.URI)
         mongo.db = mongo.client[config.mongo.DATABASE]
         mongo.collection = mongo.db[config.mongo.COLLECTION]
     except Exception as exc:
+        logger.exception("Cannot connect to MongoDB")
         raise RuntimeError(f"Cannot connect to MongoDB: {exc}")
 
     try:
         rabbit.connection = await connect_robust(config.rabbit.URI)
         rabbit.channel = await rabbit.connection.channel(publisher_confirms=True)
-        rabbit.queue = await rabbit.channel.declare_queue(config.rabbit.QUEUE_NAME, durable=config.rabbit.DURABLE)
+        rabbit.queue = await rabbit.channel.declare_queue(config.rabbit.TASK_QUEUE_NAME, durable=config.rabbit.DURABLE)
     except Exception as exc:
+        logger.exception("Cannot connect to RabbitMQ")
         raise RuntimeError(f"Cannot connect to RabbitMQ: {exc}")
 
     yield

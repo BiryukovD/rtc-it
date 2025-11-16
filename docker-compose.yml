@@ -1,0 +1,83 @@
+version: '3.9'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.11-management
+    container_name: rabbit
+    expose: 
+      - "5672"
+    ports:
+      # - "15672:15672" # Management UI
+      - "15673:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    expose: 
+      - "27017"
+    volumes:
+      - mongo_data:/data/db
+
+  service-a:
+    build:
+      context: ./service_a
+      dockerfile: Dockerfile
+    container_name: service-a
+    expose: 
+      - "8002"
+    depends_on:
+      - mongo
+      - rabbitmq
+
+  service-b-api:
+    build:
+      context: ./service_b/api
+      dockerfile: Dockerfile
+    container_name: service-b-api
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongo
+      - rabbitmq
+
+  service-b-consumer:
+    build:
+      context: ./service_b/rabbitmq_consumer
+      dockerfile: Dockerfile
+    container_name: service-b-consumer
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
+      - mongo
+
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: worker
+    env_file:
+      - .env
+    depends_on:
+      - service-a
+      - rabbitmq
+
+volumes:
+  rabbitmq_data:
+  mongo_data:
+
