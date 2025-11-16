@@ -1,1 +1,6 @@
-![alt text](image-1.png)
+![alt text](/for_readme/image-1.png)
+
+Запуск приложения
+```
+docker compose up
+```
